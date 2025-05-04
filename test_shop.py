@@ -1,14 +1,18 @@
-from dataclasses import dataclass
 """
 Протестируйте классы из модуля homework/models.py
 """
 import pytest
-from models import Product
+from models import Product, Cart
 
 
 @pytest.fixture
 def product():
     return Product("book", 100, "This is a book", 1000)
+
+
+@pytest.fixture()
+def cart():
+    return Cart()
 
 
 class TestProducts:
@@ -18,23 +22,42 @@ class TestProducts:
     """
 
     def test_product_check_quantity(self, product):
-        # TODO напишите проверки на метод check_quantity
-        pass
+        assert product.check_quantity(product.quantity) is True
+        assert product.check_quantity(1000)
 
     def test_product_buy(self, product):
-        # TODO напишите проверки на метод buy
-        pass
+        product.buy(8)
+        assert product.quantity == 992
 
     def test_product_buy_more_than_available(self, product):
-        # TODO напишите проверки на метод buy,
-        #  которые ожидают ошибку ValueError при попытке купить больше, чем есть в наличии
-        pass
+        with pytest.raises(ValueError):
+            assert product.buy(1009)
 
 
 class TestCart:
-    """
-    TODO Напишите тесты на методы класса Cart
-        На каждый метод у вас должен получиться отдельный тест
-        На некоторые методы у вас может быть несколько тестов.
-        Например, негативные тесты, ожидающие ошибку (используйте pytest.raises, чтобы проверить это)
-    """
+
+    def test_add_product(self, product, cart):
+        cart.add_product(buy_count=1, product=product)
+        assert cart.products[product] == 1
+        cart.add_product(buy_count=1000, product=product)
+        assert cart.products[product] == 1001
+
+    def test_remove_product(self, product, cart):
+        cart.add_product(buy_count=100, product=product)
+        cart.remove_product(remove_count=100, product=product)
+        assert len(cart.products) == 0
+
+    def test_clear(self, product, cart):
+        cart.add_product(buy_count=100, product=product)
+        cart.clear()
+        assert len(cart.products) == 0
+
+    def test_total_price(self, product, cart):
+        cart.add_product(buy_count=2, product=product)
+        assert cart.get_total_price() == 200
+
+    def test_product_buy_more_than_available(self, cart, product):
+        cart.add_product(product, 1999)
+        with pytest.raises(ValueError):
+            cart.buy()
+        assert product.quantity == 1000
